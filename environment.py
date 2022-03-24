@@ -181,9 +181,9 @@ class Line:
         a_flag = 0
 
         action = self.action(action)
-        if 0 <= index * self.delta_location < 0.25 * self.distance:
+        if 0 <= index * self.delta_location < 0.22 * self.distance:
             action = action * self.acc
-        elif 0.25 * self.distance <= index * self.delta_location < 0.71 * self.distance:
+        elif 0.22 * self.distance <= index * self.delta_location < 0.7 * self.distance:
             action = ((action - 1) / 1) * self.acc
         else:
             action = -action * self.acc
