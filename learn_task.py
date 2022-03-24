@@ -41,9 +41,9 @@ class DDPGConfig:
                            '/' + curr_time + '/results/'  # 保存结果的路径
         self.model_path = curr_path + "/outputs/" + self.env + \
                           '/' + curr_time + '/models/'  # 保存模型的路径
-        self.train_eps = 500  # 测试的回合数
+        self.train_eps = 5000  # 训练的回合数
         self.max_step = 500  # 每回合最多步数
-        self.eval_eps = 30  # 测试的回合数
+        self.eval_eps = 1  # 测试的回合数
         self.gamma = 0.99  # 折扣因子
         self.critic_lr = 1e-3  # 评论家网络的学习率
         self.actor_lr = 1e-4  # 演员网络的学习率
@@ -100,7 +100,7 @@ def train(cfg, env, agent):
             if i_ep > 30:
                 action = agent.choose_action(state)
             else:
-                action = np.random.uniform(-1, 1)
+                action = agent.choose_action(state)
             oa_list.append(action)
             action = ou_noise.get_action(action, i_step)
 
@@ -114,7 +114,7 @@ def train(cfg, env, agent):
             a_list.append(action)
             ep_reward += reward
             agent.memory.push(state, action, reward, next_state, done)
-            if i_ep >30:
+            if i_ep >300:
                 agent.update()
             state = next_state
             if done:
