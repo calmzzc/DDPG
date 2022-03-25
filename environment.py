@@ -111,8 +111,8 @@ class Line:
         velocity = np.sqrt(temp_square_velocity)
         if velocity <= 0:
             velocity = np.array(0.1).reshape(1)
-        elif velocity >= 30:
-            velocity = np.array(30).reshape(1)
+        # elif velocity >= 30:
+        #     velocity = np.array(30).reshape(1)
 
         time = time + self.delta_location / (velocity / 2 + temp_velocity / 2)
 
@@ -196,8 +196,8 @@ class Line:
         velocity = np.sqrt(temp_square_velocity)
         if velocity <= 0:
             velocity = np.array(1).reshape(1)
-        elif velocity >= 30:
-            velocity = np.array(30).reshape(1)
+        # elif velocity >= 30:
+        #     velocity = np.array(30).reshape(1)
 
         time = time + self.delta_location / (velocity / 2 + temp_velocity / 2)
         temp_time = self.delta_location / (velocity / 2 + temp_velocity / 2)  # 每一个位移间隔的时间

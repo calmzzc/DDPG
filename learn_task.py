@@ -43,7 +43,7 @@ class DDPGConfig:
                           '/' + curr_time + '/models/'  # 保存模型的路径
         self.train_eps = 5000  # 训练的回合数
         self.max_step = 500  # 每回合最多步数
-        self.eval_eps = 1  # 测试的回合数
+        self.eval_eps = 30  # 测试的回合数
         self.gamma = 0.99  # 折扣因子
         self.critic_lr = 1e-3  # 评论家网络的学习率
         self.actor_lr = 1e-4  # 演员网络的学习率
@@ -98,25 +98,29 @@ def train(cfg, env, agent):
         while True:
             i_step += 1
             if i_ep > 30:
-                action = agent.choose_action(state)
+                o_action = agent.choose_action(state)
+                o_action = np.array(o_action).reshape(1)
             else:
-                action = agent.choose_action(state)
-            oa_list.append(action)
-            action = ou_noise.get_action(action, i_step)
-
+                o_action = agent.choose_action(state)
+                o_action = np.array(o_action).reshape(1)
+            oa_list.append(o_action)
+            action = ou_noise.get_action(o_action, i_step)
+            temp_state = state.copy()
             next_state, reward, done, time, velocity, total_power, action, ep_unsafe_counts = env.step(total_power,
-                                                                                                       state,
-                                                                                                       action, i_step,
+                                                                                                       state.copy(),
+                                                                                                       action.copy(),
+                                                                                                       i_step,
                                                                                                        ep_unsafe_counts)
 
             t_list.append(time)
             v_list.append(velocity)
             a_list.append(action)
             ep_reward += reward
-            agent.memory.push(state, action, reward, next_state, done)
-            if i_ep >300:
+            agent.memory.push(state.copy(), action.copy(), reward, next_state.copy(), done)
+            # agent.memory.push(state, temp_a, reward, next_state, done)
+            if i_ep > 300:
                 agent.update()
-            state = next_state
+            state = next_state.copy()
             if done:
                 total_t_list.append(t_list.copy())
                 total_v_list.append(v_list.copy())
@@ -153,7 +157,7 @@ def train(cfg, env, agent):
         else:
             ma_rewards.append(ep_reward)
     print('完成训练！')
-    return rewards, ma_rewards, total_v_list, total_t_list, total_a_list, total_ep_list, total_power_list, ma_total_power_list, unsafe_counts, ma_unsafe_counts
+    return rewards, ma_rewards, total_v_list, total_t_list, total_a_list, total_ep_list, total_power_list, ma_total_power_list, unsafe_counts, ma_unsafe_counts, total_oa_list
 
 
 def train2(cfg, env, agent):
@@ -267,7 +271,7 @@ def eval(cfg, env, agent):
             action = agent.choose_action(state)
             action = np.array(action).reshape(1)
             next_state, reward, done, time, velocity, total_power, action, ep_unsafe_counts = env.step(total_power,
-                                                                                                       state,
+                                                                                                       state.copy(),
                                                                                                        action, i_step,
                                                                                                        ep_unsafe_counts)
             t_list.append(time)
@@ -308,9 +312,10 @@ if __name__ == "__main__":
     cfg = DDPGConfig()
     # 训练
     env, agent = env_agent_config(cfg, seed=1)
-    rewards, ma_rewards, v_list, t_list, a_list, ep_list, power_list, ma_power_list, unsafe_c, ma_unsafe_c = train(cfg,
-                                                                                                                   env,
-                                                                                                                   agent)
+    rewards, ma_rewards, v_list, t_list, a_list, ep_list, power_list, ma_power_list, unsafe_c, ma_unsafe_c, t_oa_list = train(
+        cfg,
+        env,
+        agent)
     # rewards, ma_rewards, v_list, t_list, a_list = train2(cfg, env, agent)
     make_dir(cfg.result_path, cfg.model_path)
     agent.save(path=cfg.model_path)
