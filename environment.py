@@ -1,5 +1,7 @@
 import math
 import numpy as np
+import torch
+import random
 
 
 class Line:
@@ -17,7 +19,7 @@ class Line:
         self.time_dim = self.scheduled_time / self.delta_t
         self.ave_dis = self.distance / self.time_dim  # 平均位移
         self.ave_vel = self.distance / self.scheduled_time  # 平均速度
-        self.acc = 0.5
+        self.acc = 1
         self.action_space = 1
         self.delta_location = 50
         self.locate_dim = self.distance / self.delta_location
@@ -54,6 +56,13 @@ class Line:
                               c_velocity * 3.6 / 2 + b_velocity * 3.6 / 2) * abs(self.delta_location) / (
                               c_velocity / 2 + b_velocity / 2) / (12960000 * 1.2)
         return t_power, f_power
+
+    def seed(self, seed):
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        np.random.seed(seed)
+        random.seed(seed)
+        torch.backends.cudnn.deterministic = True
 
     def calc_power2(self, action, c_velocity):
         total_f = action * self.weight  # 单位为KN
@@ -181,16 +190,18 @@ class Line:
         a_flag = 0
 
         action = self.action(action)
-        if 0 <= index * self.delta_location < 0.22 * self.distance:
-            action = action * self.acc
-        elif 0.22 * self.distance <= index * self.delta_location < 0.7 * self.distance:
-            action = ((action - 1) / 1) * self.acc
-        else:
-            action = -action * self.acc
-            # action = ((action - 1) / 1) * self.acc
+        # if 0 <= index * self.delta_location < 0.22 * self.distance:
+        #     t_action = action * self.acc
+        # elif 0.22 * self.distance <= index * self.delta_location < 0.7 * self.distance:
+        #     t_action = ((action - 1) / 1) * self.acc
+        # else:
+        #     t_action = -action * self.acc
+        t_action = action * self.acc
+
+        # action = ((action - 1) / 1) * self.acc
         # action = ((action - 1) / 1) * self.acc
         action = np.array(action).reshape(1)
-        temp_square_velocity = temp_velocity * temp_velocity + 2 * action * self.delta_location
+        temp_square_velocity = temp_velocity * temp_velocity + 2 * t_action * self.delta_location
         if temp_square_velocity <= 1:
             temp_square_velocity = np.array(1).reshape(1)
         velocity = np.sqrt(temp_square_velocity)
@@ -215,7 +226,8 @@ class Line:
         beta = 0.75
         gama = 1
         if index == self.locate_dim:
-            if abs(time - self.scheduled_time) <= 5:
+            done = 1
+            if abs(time - self.scheduled_time) <= 5 and abs(velocity) <= 2:
                 # delta = 10 / abs(time - self.scheduled_time)
                 delta = 100
             else:
@@ -228,18 +240,10 @@ class Line:
                 a = -1 * time + 1 * self.scheduled_time
             if punishment_flag:
                 unsafe_counts = unsafe_counts + 1
-                reward = -0.001 * total_power - 5 * velocity + gama * a + delta * 1
-                if reward < -300:
-                    done = 1
-                else:
-                    done = 1
+                reward = -0.001 * total_power - 20 * velocity + gama * a + delta * 1
             else:
                 unsafe_counts = unsafe_counts + 0
-                reward = -0.001 * total_power - 5 * velocity + gama * a + delta * 1
-                if reward < -300:
-                    done = 1
-                else:
-                    done = 1
+                reward = -0.001 * total_power - 20 * velocity + gama * a + delta * 1
         else:
             done = 0
             if time > self.scheduled_time:
@@ -248,7 +252,7 @@ class Line:
                 delta = 0
             if punishment_flag:
                 unsafe_counts = unsafe_counts + 1
-                reward = -0.1 * t_power - 0.1 * f_power - 0.9 * abs(
+                reward = -0.01 * t_power - 0.01 * f_power - 0.99 * abs(
                     temp_time - self.ave_time) + self.punishment_indicator
                 # temp = (self.distance - index * self.delta_location) / abs((self.scheduled_time - time) + 1)
                 # if temp > 100:
@@ -257,7 +261,7 @@ class Line:
                 #         self.locate_dim - index) + self.punishment_indicator
             else:
                 unsafe_counts = unsafe_counts + 0
-                reward = -0.1 * t_power - 0.1 * f_power - 0.9 * abs(temp_time - self.ave_time)
+                reward = -0.01 * t_power - 0.01 * f_power - 0.99 * abs(temp_time - self.ave_time)
                 # temp = (self.distance - index * self.delta_location) / abs((self.scheduled_time - time) + 1)
                 # if temp > 100:
                 #     temp = 100
@@ -267,8 +271,8 @@ class Line:
         return state, reward, done, time, velocity, total_power, action, unsafe_counts
 
     def action(self, action):
-        low_bound = 0
-        upper_bound = 2
+        low_bound = -1
+        upper_bound = 1
         action = low_bound + (action + 1.0) * 0.5 * (upper_bound - low_bound)
         action = np.clip(action, low_bound, upper_bound)
 

@@ -58,7 +58,7 @@ class DDPGConfig:
 def env_agent_config(cfg, seed=1):
     # env = NormalizedActions(gym.make(cfg.env))
     env = Line()
-    # env.seed(seed)  # 随机种子
+    env.seed(seed)  # 随机种子
     state_dim = 2
     action_dim = 1
     agent = DDPG(state_dim, action_dim, cfg)
