@@ -252,7 +252,7 @@ class Line:
                 delta = 0
             if punishment_flag:
                 unsafe_counts = unsafe_counts + 1
-                reward = -0.0005 * t_power - 0.0005 * f_power - 4.2 * abs(
+                reward = -0.0005 * t_power - 0.0005 * f_power - 3 * abs(
                     temp_time - self.ave_time) + self.punishment_indicator
                 # temp = (self.distance - index * self.delta_location) / abs((self.scheduled_time - time) + 1)
                 # if temp > 100:
@@ -261,7 +261,7 @@ class Line:
                 #         self.locate_dim - index) + self.punishment_indicator
             else:
                 unsafe_counts = unsafe_counts + 0
-                reward = -0.0005 * t_power - 0.0005 * f_power - 4.2 * abs(temp_time - self.ave_time)
+                reward = -0.0005 * t_power - 0.0005 * f_power - 3 * abs(temp_time - self.ave_time)
                 # temp = (self.distance - index * self.delta_location) / abs((self.scheduled_time - time) + 1)
                 # if temp > 100:
                 #     temp = 100

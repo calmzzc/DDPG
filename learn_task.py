@@ -41,7 +41,7 @@ class DDPGConfig:
                            '/' + curr_time + '/results/'  # 保存结果的路径
         self.model_path = curr_path + "/outputs/" + self.env + \
                           '/' + curr_time + '/models/'  # 保存模型的路径
-        self.train_eps = 20000  # 训练的回合数
+        self.train_eps = 10000  # 训练的回合数
         self.max_step = 500  # 每回合最多步数
         self.eval_eps = 30  # 测试的回合数
         self.gamma = 0.99  # 折扣因子
