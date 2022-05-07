@@ -48,9 +48,10 @@ class DDPGConfig:
         self.critic_lr = 1e-3  # 评论家网络的学习率
         self.actor_lr = 1e-4  # 演员网络的学习率
         self.memory_capacity = 8000
-        self.batch_size = 32
+        self.batch_size = 128
         self.target_update = 2
         self.hidden_dim = 256
+        self.update_every = 15
         self.soft_tau = 1e-2  # 软更新参数
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -58,7 +59,7 @@ class DDPGConfig:
 def env_agent_config(cfg, seed=1):
     # env = NormalizedActions(gym.make(cfg.env))
     env = Line()
-    env.seed(seed)  # 随机种子
+    # env.seed(seed)  # 随机种子
     state_dim = 2
     action_dim = 1
     agent = DDPG(state_dim, action_dim, cfg)
@@ -118,7 +119,9 @@ def train(cfg, env, agent):
             ep_reward += reward
             agent.memory.push(state.copy(), action.copy(), reward, next_state.copy(), done)
             # agent.memory.push(state, temp_a, reward, next_state, done)
-            if i_ep > 300:
+            # if i_ep > 300 and i_step % cfg.update_every == 0:  # 可以考虑使用这种方法更新，更改判断结束的条件，固定时间步长
+            #     agent.update()
+            if i_ep > 300 :
                 agent.update()
             state = next_state.copy()
             if done:

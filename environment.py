@@ -227,7 +227,7 @@ class Line:
         gama = 1
         if index == self.locate_dim:
             done = 1
-            if abs(time - self.scheduled_time) <= 5 and abs(velocity) <= 2:
+            if abs(time - self.scheduled_time) <= 5 and abs(velocity) <= 1:
                 # delta = 10 / abs(time - self.scheduled_time)
                 delta = 100
             else:
@@ -240,19 +240,19 @@ class Line:
                 a = -1 * time + 1 * self.scheduled_time
             if punishment_flag:
                 unsafe_counts = unsafe_counts + 1
-                reward = -0.001 * total_power - 20 * velocity + gama * a + delta * 1
+                reward = -0.001 * total_power - 25 * velocity + gama * a + delta * 1
             else:
                 unsafe_counts = unsafe_counts + 0
-                reward = -0.001 * total_power - 20 * velocity + gama * a + delta * 1
+                reward = -0.001 * total_power - 25 * velocity + gama * a + delta * 1
         else:
             done = 0
             if time > self.scheduled_time:
                 delta = 0
             else:
                 delta = 0
-            if punishment_flag:
+            if punishment_flag:  # 测试3.43、3.44、3.42
                 unsafe_counts = unsafe_counts + 1
-                reward = -0.0005 * t_power - 0.0005 * f_power - 3 * abs(
+                reward = -0.001 * t_power - 0.001 * f_power - 3.4 * abs(
                     temp_time - self.ave_time) + self.punishment_indicator
                 # temp = (self.distance - index * self.delta_location) / abs((self.scheduled_time - time) + 1)
                 # if temp > 100:
@@ -261,7 +261,7 @@ class Line:
                 #         self.locate_dim - index) + self.punishment_indicator
             else:
                 unsafe_counts = unsafe_counts + 0
-                reward = -0.0005 * t_power - 0.0005 * f_power - 3 * abs(temp_time - self.ave_time)
+                reward = -0.001 * t_power - 0.001 * f_power - 3.4 * abs(temp_time - self.ave_time)
                 # temp = (self.distance - index * self.delta_location) / abs((self.scheduled_time - time) + 1)
                 # if temp > 100:
                 #     temp = 100
