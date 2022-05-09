@@ -59,7 +59,7 @@ class DDPGConfig:
 def env_agent_config(cfg, seed=1):
     # env = NormalizedActions(gym.make(cfg.env))
     env = Line()
-    # env.seed(seed)  # 随机种子
+    env.seed(seed)  # 随机种子
     state_dim = 2
     action_dim = 1
     agent = DDPG(state_dim, action_dim, cfg)
@@ -98,20 +98,29 @@ def train(cfg, env, agent):
         total_power = 0
         while True:
             i_step += 1
-            if i_ep > 30:
+            if i_ep > 100:
                 o_action = agent.choose_action(state)
                 o_action = np.array(o_action).reshape(1)
+                action = ou_noise.get_action(o_action, i_step)
             else:
-                o_action = agent.choose_action(state)
-                o_action = np.array(o_action).reshape(1)
+                # o_action = agent.choose_action(state)
+                # o_action = np.array(o_action).reshape(1)
+                o_action = np.array(np.random.uniform(0, 1)).reshape(1)
+                action = o_action
             oa_list.append(o_action)
-            action = ou_noise.get_action(o_action, i_step)
+            # action = ou_noise.get_action(o_action, i_step)
+            # if i_step == 1:
+            #     last_action = 0
+            # else:
+            #     last_action = a_list[i_step - 1]
+            last_action = a_list[i_step - 1]
             temp_state = state.copy()
             next_state, reward, done, time, velocity, total_power, action, ep_unsafe_counts = env.step(total_power,
                                                                                                        state.copy(),
                                                                                                        action.copy(),
                                                                                                        i_step,
-                                                                                                       ep_unsafe_counts)
+                                                                                                       ep_unsafe_counts,
+                                                                                                       last_action)
 
             t_list.append(time)
             v_list.append(velocity)
@@ -121,7 +130,7 @@ def train(cfg, env, agent):
             # agent.memory.push(state, temp_a, reward, next_state, done)
             # if i_ep > 300 and i_step % cfg.update_every == 0:  # 可以考虑使用这种方法更新，更改判断结束的条件，固定时间步长
             #     agent.update()
-            if i_ep > 300 :
+            if i_ep > 100:
                 agent.update()
             state = next_state.copy()
             if done:
@@ -273,10 +282,12 @@ def eval(cfg, env, agent):
             i_step += 1
             action = agent.choose_action(state)
             action = np.array(action).reshape(1)
+            last_action = a_list[i_step - 1]
             next_state, reward, done, time, velocity, total_power, action, ep_unsafe_counts = env.step(total_power,
                                                                                                        state.copy(),
                                                                                                        action, i_step,
-                                                                                                       ep_unsafe_counts)
+                                                                                                       ep_unsafe_counts,
+                                                                                                       last_action)
             t_list.append(time)
             v_list.append(velocity)
             a_list.append(action)

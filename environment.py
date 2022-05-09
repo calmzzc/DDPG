@@ -181,7 +181,7 @@ class Line:
 
         return state, reward, done, time, velocity, total_power, action
 
-    def step(self, total_power, state, action, index, unsafe_counts):
+    def step(self, total_power, state, action, index, unsafe_counts, last_action):
         # temp_location = state[0]
         time = np.array(state[0]).reshape(1)
         # location = state[0]
@@ -190,6 +190,7 @@ class Line:
         a_flag = 0
 
         action = self.action(action)
+        last_action = self.action(last_action)
         # if 0 <= index * self.delta_location < 0.22 * self.distance:
         #     t_action = action * self.acc
         # elif 0.22 * self.distance <= index * self.delta_location < 0.7 * self.distance:
@@ -197,6 +198,11 @@ class Line:
         # else:
         #     t_action = -action * self.acc
         t_action = action * self.acc
+        l_action = last_action * self.acc
+        if abs(t_action - l_action) > 0.3:
+            comfort_indicator = 10
+        else:
+            comfort_indicator = 0
 
         # action = ((action - 1) / 1) * self.acc
         # action = ((action - 1) / 1) * self.acc
@@ -240,10 +246,10 @@ class Line:
                 a = -1 * time + 1 * self.scheduled_time
             if punishment_flag:
                 unsafe_counts = unsafe_counts + 1
-                reward = -0.001 * total_power - 25 * velocity + gama * a + delta * 1
+                reward = -0.001 * total_power - 25 * velocity + gama * a + delta * 1 - 1 * comfort_indicator
             else:
                 unsafe_counts = unsafe_counts + 0
-                reward = -0.001 * total_power - 25 * velocity + gama * a + delta * 1
+                reward = -0.001 * total_power - 25 * velocity + gama * a + delta * 1 - 1 * comfort_indicator
         else:
             done = 0
             if time > self.scheduled_time:
@@ -253,7 +259,7 @@ class Line:
             if punishment_flag:  # 测试3.43、3.44、3.42
                 unsafe_counts = unsafe_counts + 1
                 reward = -0.001 * t_power - 0.001 * f_power - 3.4 * abs(
-                    temp_time - self.ave_time) + self.punishment_indicator
+                    temp_time - self.ave_time) + self.punishment_indicator - 1 * comfort_indicator
                 # temp = (self.distance - index * self.delta_location) / abs((self.scheduled_time - time) + 1)
                 # if temp > 100:
                 #     temp = 100
@@ -261,7 +267,8 @@ class Line:
                 #         self.locate_dim - index) + self.punishment_indicator
             else:
                 unsafe_counts = unsafe_counts + 0
-                reward = -0.001 * t_power - 0.001 * f_power - 3.4 * abs(temp_time - self.ave_time)
+                reward = -0.001 * t_power - 0.001 * f_power - 3.4 * abs(
+                    temp_time - self.ave_time) - 1 * comfort_indicator
                 # temp = (self.distance - index * self.delta_location) / abs((self.scheduled_time - time) + 1)
                 # if temp > 100:
                 #     temp = 100
